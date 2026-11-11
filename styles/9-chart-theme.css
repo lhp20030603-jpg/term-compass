@@ -1,0 +1,88 @@
+/*
+ * Chart theme: paper and ink, like a nautical chart. Loaded last, so it decides
+ * the colours of the dashboard, the tasks panel and the flashcards.
+ */
+.sp-root, .tp-root, .rc-root, .sp-float, .sv-float {
+  --tc-paper: #f3eee2;
+  --tc-paper-2: #faf6ec;
+  --tc-card-inner: #fffdf7;
+  --tc-ink: #1f3a5c;
+  --tc-ink-soft: rgba(31, 58, 92, 0.1);
+  --tc-tile: rgba(31, 58, 92, 0.045);
+  --tc-line: rgba(31, 58, 92, 0.17);
+  --tc-grid: rgba(31, 58, 92, 0.055);
+  --tc-brass: #a8751f;
+  --tc-red: #b4472f;
+  --tc-serif: "Songti SC", "Noto Serif SC", "Source Han Serif SC", "STSong", Georgia, serif;
+}
+.theme-dark .sp-root, .theme-dark .tp-root, .theme-dark .rc-root, .theme-dark .sp-float, .theme-dark .sv-float {
+  --tc-paper: #111925;
+  --tc-paper-2: #182232;
+  --tc-card-inner: #1d2a3d;
+  --tc-ink: #8fbbe6;
+  --tc-ink-soft: rgba(143, 187, 230, 0.13);
+  --tc-tile: rgba(143, 187, 230, 0.06);
+  --tc-line: rgba(143, 187, 230, 0.16);
+  --tc-grid: rgba(143, 187, 230, 0.045);
+  --tc-brass: #d9ab52;
+  --tc-red: #e07a5f;
+}
+
+/* Dashboard */
+.sp-root {
+  --sp-accent: var(--tc-ink); --sp-accent-soft: var(--tc-ink-soft);
+  --sp-card: var(--tc-paper-2); --sp-card-inner: var(--tc-card-inner); --sp-tile: var(--tc-tile); --sp-border: var(--tc-line);
+  --sp-hot: var(--tc-red); --sp-orange: var(--tc-brass);
+  --sp-l1: color-mix(in srgb, var(--tc-ink) 22%, transparent); --sp-l2: color-mix(in srgb, var(--tc-ink) 45%, transparent);
+  --sp-l3: color-mix(in srgb, var(--tc-ink) 70%, transparent); --sp-l4: var(--tc-ink);
+}
+.theme-dark .sp-root { --sp-accent: var(--tc-ink); --sp-accent-soft: var(--tc-ink-soft); --sp-card: var(--tc-paper-2); --sp-card-inner: var(--tc-card-inner); --sp-tile: var(--tc-tile); --sp-border: var(--tc-line); }
+.sp-view.sp-root, .theme-dark .sp-view.sp-root {
+  background:
+    repeating-linear-gradient(0deg, var(--tc-grid) 0 1px, transparent 1px 56px),
+    repeating-linear-gradient(90deg, var(--tc-grid) 0 1px, transparent 1px 56px),
+    var(--tc-paper);
+}
+.sp-root .sp-card, .sp-root .sp-player, .sp-root .sp-course {
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+  background: var(--sp-card); border: 1px solid var(--sp-border); border-radius: 10px;
+  box-shadow: 0 1px 0 var(--tc-line);
+}
+.sp-root .sp-course { background: var(--tc-card-inner); }
+.sp-root .sp-card-title, .sp-root .sp-hero-title, .sp-root .sp-lu-level, .sp-root .sp-voy-week .sp-strong { font-family: var(--tc-serif); letter-spacing: 0.02em; }
+.sp-root .sp-card-title { font-size: 15px; color: var(--tc-ink); }
+.sp-root .sp-card-icon { background: transparent; border: 1px solid var(--sp-border); border-radius: 50%; color: var(--tc-ink); }
+.sp-root .sp-badge { background: transparent; border: 1px solid var(--sp-border); color: var(--tc-ink); }
+.sp-chips.is-glass { background: color-mix(in srgb, var(--tc-paper-2) 88%, transparent); border: 1px solid var(--tc-line); }
+.sp-chips.is-glass button.sp-chip, .theme-dark .sp-chips.is-glass button.sp-chip { background: transparent; color: var(--tc-ink); border: none; }
+.sp-chips.is-glass button.sp-chip.is-active { background: var(--tc-ink); color: var(--tc-paper-2); }
+.sp-root .sp-now-row { background: var(--tc-tile); border-left: 3px solid var(--tc-line); border-radius: 6px; }
+.sp-root .sp-now-row.is-hot { background: color-mix(in srgb, var(--tc-red) 9%, transparent); border-left-color: var(--tc-red); }
+.sp-root .sp-now-row.is-warm { background: color-mix(in srgb, var(--tc-brass) 9%, transparent); border-left-color: var(--tc-brass); }
+.sp-root .sp-now-row.is-hot .sp-now-when { color: var(--tc-red); }
+.sp-root .sp-now-row.is-warm .sp-now-when { color: var(--tc-brass); }
+.sp-root .sp-voy-week { background: var(--tc-tile); border: 1px dashed var(--tc-line); }
+.sp-cmp.is-full .sp-cmp-ring { stroke: var(--tc-brass); }
+.sp-cmp.is-full .sp-cmp-on { fill: var(--tc-brass); }
+
+/* Tasks side bar */
+.tp-root, .theme-dark .tp-root {
+  --tp-accent: var(--tc-ink); --tp-soft: var(--tc-ink-soft); --tp-card: var(--tc-paper-2); --tp-tile: var(--tc-tile);
+  --tp-border: var(--tc-line); --tp-hot: var(--tc-red); --tp-warm: var(--tc-brass);
+  background: var(--tc-paper) !important;
+}
+.tp-root .tp-title { font-family: var(--tc-serif); color: var(--tc-ink); }
+.tp-root button.tp-chip.is-active { background: var(--tc-ink); color: var(--tc-paper-2); }
+.tp-root .tp-list, .tp-root .tp-memo, .tp-root .tp-chips, .tp-root .tp-switch { border-radius: 10px; }
+
+/* Flashcards */
+.rc-root, .theme-dark .rc-root {
+  --rc-accent: var(--tc-ink); --rc-soft: var(--tc-ink-soft); --rc-card: var(--tc-paper-2); --rc-tile: var(--tc-tile); --rc-border: var(--tc-line);
+  background: var(--tc-paper) !important;
+}
+.rc-root .rc-title { font-family: var(--tc-serif); color: var(--tc-ink); }
+.rc-root .rc-card { backdrop-filter: none; border-radius: 10px; }
+
+/* Floating timers */
+.sp-float, .sv-float { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--tc-paper-2); border: 1px solid var(--tc-line); }
+.sp-root button.sp-voy-wk.is-now { color: var(--tc-paper-2); }

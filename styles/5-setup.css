@@ -1,0 +1,10 @@
+/* First-run dialog and the recognition check */
+.tc-muted { color: var(--text-muted); font-size: 12.5px; }
+.tc-setup .tc-found { margin: -4px 0 8px; padding: 8px 10px; border-radius: 8px; background: var(--background-secondary); font-size: 12.5px; }
+.tc-check-sec { margin: 12px 0; }
+.tc-check-title { font-weight: 650; margin-bottom: 4px; }
+.tc-check-row { display: flex; gap: 8px; align-items: flex-start; padding: 4px 0; font-size: 13px; }
+.tc-check-mark { flex: none; width: 16px; text-align: center; }
+.tc-check-row.is-ok .tc-check-mark { color: #3f9a5a; }
+.tc-check-row.is-bad .tc-check-mark { color: #d0672f; }
+.tc-check-row.is-hint .tc-check-mark { color: var(--text-faint); }

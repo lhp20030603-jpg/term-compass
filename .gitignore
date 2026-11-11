@@ -1,0 +1,6 @@
+# Built by build.js
+main.js
+styles.css
+node_modules/
+.DS_Store
+demo-vault/

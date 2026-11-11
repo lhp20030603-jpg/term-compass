@@ -1,0 +1,9 @@
+{
+  "id": "term-compass",
+  "name": "Term Compass 学期罗盘",
+  "version": "0.1.0",
+  "minAppVersion": "1.6.6",
+  "description": "A semester dashboard for students: what to do now, lectures, deadlines, exam plans, flashcards from your notes, tasks, and local lecture transcription.",
+  "author": "Haopeng Liu",
+  "isDesktopOnly": false
+}

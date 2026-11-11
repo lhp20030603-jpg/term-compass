@@ -77,7 +77,7 @@ brew install whisper-cpp
 
 ## 开发
 
-不依赖任何 npm 包，只要 Node 18 以上：
+不依赖任何 npm 包，只要 Node 22 以上：
 
 ```bash
 node build.js        # 从 src/ 生成 main.js 和 styles.css

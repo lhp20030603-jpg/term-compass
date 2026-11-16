@@ -94,7 +94,7 @@ test('the week mix adds up minutes by kind and keeps last week for comparison', 
 
 const HOME = ['### 第 1 讲 · 导论 · 10-13\n- [[n1]]', '### 第 2 讲 · 供需 · 10-20\n- [[n2]]', '### 第 3 讲 · 弹性 · 10-27\n- [[n3]]',
   '### 第 4 讲 · 外部性 · 11-03\n- [[n4]]', '### 第 5 讲 · 公共物品 · 11-24\n- [[n5]]'].join('\n\n') + '\n';
-const SCHEDULE = '## 关键日期\n\n| 日期 | 事项 | 课程 |\n|---|---|---|\n| 11-20 | 小论文截止 | ECON101 |\n| 12-10 | 期末考试 | ECON101 |\n';
+const SCHEDULE = '## 关键日期\n\n| 日期 | 事项 | 课程 |\n|---|---|---|\n| 11-18 | 考前复习课 | ECON101 |\n| 11-20 | 小论文截止 | ECON101 |\n| 12-10 | 期末考试 | ECON101 |\n';
 const depthModel = () => build({
   files: [1, 2, 3, 4, 5].map((n) => ({ path: `课程/ECON101/n${n}.md`, ctime: 0, mtime: 0 })),
   reading: { '课程/ECON101/n2.md': 900, '课程/ECON101/n3.md': 900, '课程/ECON101/n4.md': 900 },
@@ -110,7 +110,7 @@ test('each lecture gets a depth: not yet, attended, read, practised, kept', () =
   assert.equal(row.cells[1].link, '课程/ECON101/n2.md');
 });
 
-test('the depth chart counts down to the exam, not to an essay deadline', () => {
+test('the depth chart counts down to the exam, not to an essay deadline or a revision class', () => {
   const row = P.depthChart(depthModel(), {}).find((r) => r.code === 'ECON101');
   assert.equal(row.exam.title, '期末考试');
   assert.equal(row.exam.left, 28);

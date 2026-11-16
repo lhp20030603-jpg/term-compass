@@ -193,7 +193,7 @@ function renderRose(parent, model, view) {
 
 const DEPTH_NAMES = ['还没上', '上过', '读过', '练过', '记牢'];
 const DEPTH_MATURE_DAYS = 21, DEPTH_KEPT = 0.8;
-const EXAM_WORD = /考|exam|test|quiz/i;
+const EXAM_WORD = /考试|期中|期末|exam|test|quiz/i, NOT_EXAM = /复习|答疑|revision|review/i;
 
 /** One row per course, one cell per lecture, sorted by the nearest exam. cardDepth: {path: {total, started, mature}}. */
 function depthChart(model, cardDepth) {
@@ -210,7 +210,7 @@ function depthChart(model, cardDepth) {
       if (attended && cards.total > 0 && cards.mature / cards.total >= DEPTH_KEPT) level = 4;
       return { n: it.n, label: it.label, level, cards, link: (it.paths || [])[0] || null };
     });
-    const exam = (model.allDeadlines || []).filter((d) => d.due >= today && EXAM_WORD.test(d.title) && d.course && (d.course === c.code || c.code.includes(d.course) || d.course.includes(c.code)))[0];
+    const exam = (model.allDeadlines || []).filter((d) => d.due >= today && EXAM_WORD.test(d.title) && !NOT_EXAM.test(d.title) && d.course && (d.course === c.code || c.code.includes(d.course) || d.course.includes(c.code)))[0];
     const taught = cells.filter((x) => x.level > 0);
     return { code: c.code, color: c.color, homePath: c.homePath, cells, taught: taught.length, shallow: taught.filter((x) => x.level < 2).length,
       exam: exam ? { title: exam.title, left: Math.round((day0(exam.due) - today) / 864e5), fuzzy: exam.fuzzy } : null };

@@ -122,6 +122,7 @@ function buildModel(ctx) {
       heard: new Set(recordings.filter((r) => r.course === code).map((r) => r.date)),
       readMin: (lt) => (((ctx.reading || {})[resolve(lt, homeInfo.path || '')]) || 0) / 60,
     });
+    for (const it of items) it.paths = it.links.map((l) => resolve(l, homeInfo.path || '')).filter(Boolean);
     const sDone = items.filter((x) => x.done).length;
     const sDoing = items.filter((x) => x.status === 'doing').length;
     const sAttended = items.filter((x) => x.status === 'attended').length;
@@ -133,11 +134,29 @@ function buildModel(ctx) {
       done, open, words, last, home, homePath: homeInfo.path, spark, progress, items, sDone, sDoing, sAttended, overdue, current, next: upNext };
   });
 
+  // A lecture written with a real date counts as attended on that day.
+  for (const c of courses) for (const it of c.items) {
+    const k = dkey(it.due);
+    if (it.estimated || k > today) continue;
+    (days[k] || (days[k] = Object.assign(emptyDay(), { est: false, score: 0 }))).hadLecture = true;
+  }
   const habits = (k) => HABITS.map((hb) => {
     const prog = hb.progress(days[k] || emptyDay(), codes);
-    return { key: hb.key, label: hb.label, icon: hb.icon, hint: hb.hint, done: prog.frac >= 1, prog };
+    return { key: hb.key, label: hb.label, icon: hb.icon, dir: hb.dir, hint: hb.hint, done: prog.frac >= 1, prog };
   });
   const phase = (k) => habits(k).filter((x) => x.done).length / HABITS.length;
+  // The week (Monday first) holding day k: on how many days each direction was lit, up to `upto`.
+  const roseWeek = (k, upto) => {
+    const mon = monday(parseKey(k)), counts = HABITS.map(() => 0), lit = [];
+    for (let i = 0; i < 7; i++) {
+      const dk = dkey(addDays(mon, i));
+      if (dk > (upto || today)) break;
+      const done = habits(dk).map((x) => x.done);
+      done.forEach((on, j) => { if (on) counts[j]++; });
+      lit.push({ key: dk, done });
+    }
+    return { start: mon, counts, days: lit, full: counts.every((n) => n > 0) };
+  };
 
   const milestones = milestoneStatus((texts.plans || []).flatMap((p) => parseMilestones(p.code, p.path, p.text, now)), now);
 
@@ -145,7 +164,7 @@ function buildModel(ctx) {
     now, today, days, streak: cur, longest, courses, milestones,
     deadlines: parseDeadlines(texts.schedule, now).filter((d) => d.due >= new Date(now.getFullYear(), now.getMonth(), now.getDate())),
     week: weeklyPlan(courses, parseDeadlines(texts.schedule, now), parseWeekTasks(texts.schedule), now, milestones),
-    moons: { habits, phase },
+    moons: { habits, phase }, rose: { week: roseWeek },
     allDeadlines: parseDeadlines(texts.schedule, now),
     settings: st,
     pomo: ctx.pomo,

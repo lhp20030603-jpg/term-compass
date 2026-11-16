@@ -27,20 +27,23 @@ const THEMES = { blue: ['海图墨蓝', '#1f3a5c'], river: ['河畔绿', '#3d9a6
   dusk: ['暮光紫', '#8a5cc7'], gold: ['鎏金', '#c9952b'], aurora: ['极光', '#2fa3a8'] };
 
 /**
- * Streak with shields: every full-moon day earns a shield (max 3); a missed day
- * spends one instead of breaking the streak. Today never breaks the streak.
+ * Streak with shields: the day a week first has all four directions lit earns a
+ * shield (max 3); a missed day spends one instead of breaking the streak. Today
+ * never breaks the streak.
  */
 function shieldStreak(model) {
   const keys = Object.keys(model.days).sort();
   const out = { streak: 0, longest: 0, shields: 0, shielded: [] };
   if (!keys.length) return out;
   let run = 0;
+  const paid = new Set();   // weeks that already gave their shield
   for (let d = parseKey(keys[0]); dkey(d) <= model.today; d = addDays(d, 1)) {
     const k = dkey(d);
     const day = model.days[k];
+    const wk = dkey(monday(d));
+    if (!paid.has(wk) && model.rose.week(k, k).full) { paid.add(wk); out.shields = Math.min(MAX_SHIELDS, out.shields + 1); }
     if (day && !day.est && day.score > 0) {
       run++;
-      if (model.moons.phase(k) === 1) out.shields = Math.min(MAX_SHIELDS, out.shields + 1);
     } else if (k === model.today) {
       // still time today
     } else if (out.shields > 0) { out.shields--; out.shielded.push(k); run++; }
@@ -59,8 +62,8 @@ const titleOf = (L) => TITLES.filter(([lv]) => L >= lv).pop()[1];
 const TIER_NAMES = ['未解锁', '铜', '银', '金'];
 const ACHIEVEMENTS = [
   ['streak', '🔥', '持之以恒', '最长连续学习 {n} 天', (s) => s.longest, [7, 30, 100]],
-  ['moons', '🧭', '罗盘收藏家', '累计 {n} 个满罗盘', (s) => s.fullMoons, [10, 40, 120]],
-  ['moonrun', '🌟', '完美一周', '连续 {n} 天满罗盘', (s) => s.moonRun, [3, 7, 21]],
+  ['moons', '🧭', '四向周', '累计 {n} 周四个方向都亮过', (s) => s.fullWeeks, [3, 10, 30]],
+  ['moonrun', '🌟', '稳定航向', '连续 {n} 周四个方向都亮过', (s) => s.weekRun, [2, 4, 8]],
   ['poms', '🍅', '番茄农场主', '累计 {n} 个番茄', (s) => s.poms, [50, 200, 600]],
   ['deep', '🤿', '深潜', '单日专注 {n} 分钟', (s) => s.maxFocus, [120, 200, 300]],
   ['cards', '🃏', '记忆宫殿', '累计复习 {n} 张闪卡', (s) => s.reviews, [300, 1500, 5000]],
@@ -77,7 +80,7 @@ const ACHIEVEMENTS = [
 // Monthly challenge: four goals that reset on the 1st.
 const MONTHLY = [
   ['active', '📅', '出勤', '学习 {n} 天', (m) => m.active, (dim) => dim - 5],
-  ['moons', '🧭', '满罗盘', '满罗盘 {n} 天', (m) => m.full, () => 12],
+  ['moons', '🧭', '四向周', '{n} 周四个方向都亮过', (m) => m.full, () => 3],
   ['focus', '🍅', '专注', '专注 {n} 小时', (m) => Math.floor(m.focus / 60), () => 30],
   ['cards', '🃏', '复习', '复习 {n} 张闪卡', (m) => m.reviews, () => 600],
 ].map(([id, icon, name, desc, fn, goal]) => ({ id, icon, name, desc, fn, goal }));
@@ -89,8 +92,12 @@ function monthStats(model, y, m) {
     const day = model.days[k];
     if (!day || k > model.today) continue;
     if (day.score > 0) st.active++;
-    if (model.moons.phase(k) === 1) st.full++;
     st.focus += studyMin(day); st.reviews += day.reviews || 0;
+  }
+  // A week belongs to the month its Monday falls in.
+  for (let d = monday(new Date(y, m, 1)); d <= model.now; d = addDays(d, 7)) {
+    if (d.getMonth() === m && d.getFullYear() === y && model.rose.week(dkey(d)).full) st.full++;
+    if (d > new Date(y, m + 1, 0)) break;
   }
   const dim = new Date(y, m + 1, 0).getDate();
   return MONTHLY.map((c) => { const goal = c.goal(dim); const cur = c.fn(st); return Object.assign({}, c, { goal, cur: Math.min(cur, goal), done: cur >= goal }); });
@@ -103,24 +110,21 @@ function computeGame(model) {
   model.longest = sh.longest;
   const codes = courses.map((c) => c.code);
   const dayXp = {};
-  const s = { poms: 0, reviews: 0, tasks: 0, reading: 0, fullMoons: 0, longest: sh.longest, moonRun: 0, reviewRun: 0,
+  const s = { poms: 0, reviews: 0, tasks: 0, reading: 0, fullWeeks: 0, longest: sh.longest, weekRun: 0, reviewRun: 0,
     maxFocus: 0, typed: 0, maxTyped: 0, maxCourses: 0, earlyDays: 0 };
-  let xp = 0, todayXp = 0, mRun = 0, rRun = 0;
+  let xp = 0, todayXp = 0, rRun = 0;
   const keys = Object.keys(days).sort();
   if (keys.length) {
     for (let d = parseKey(keys[0]); dkey(d) <= today; d = addDays(d, 1)) {
       const k = dkey(d);
       const day = days[k];
-      const full = !!day && !day.est && model.moons.phase(k) === 1;
-      mRun = full ? mRun + 1 : 0; s.moonRun = Math.max(s.moonRun, mRun);
       rRun = day && day.reviews > 0 ? rRun + 1 : (k === today ? rRun : 0); s.reviewRun = Math.max(s.reviewRun, rRun);
       if (!day) continue;
       const q = model.moons.habits(k).filter((x) => x.done).length;
-      dayXp[k] = day.score + q * QUEST_XP + (q === HABITS.length ? CHEST_XP : 0);
+      dayXp[k] = day.score + q * QUEST_XP + (q >= CHEST_NEED ? CHEST_XP : 0);
       // Days guessed from file dates are shown, but earn no XP and no streak.
       if (!day.est) xp += dayXp[k];
       if (k === today) todayXp = dayXp[k];
-      if (full) s.fullMoons++;
       s.poms += day.poms || 0; s.reviews += day.reviews || 0; s.tasks += day.tasks || 0; s.reading += day.reading || 0;
       s.maxFocus = Math.max(s.maxFocus, studyMin(day));
       if (!day.est) {
@@ -129,6 +133,14 @@ function computeGame(model) {
         s.maxCourses = Math.max(s.maxCourses, codes.filter((c) => typedIn(day, c) >= 30).length);
         if (day.hours && day.hours[5] + day.hours[6] + day.hours[7] > 0) s.earlyDays++;
       }
+    }
+  }
+  if (keys.length) {
+    let wRun = 0;
+    for (let d = monday(parseKey(keys[0])); d <= model.now; d = addDays(d, 7)) {
+      const full = model.rose.week(dkey(d)).full;
+      if (full) { s.fullWeeks++; wRun++; s.weekRun = Math.max(s.weekRun, wRun); }
+      else if (+d !== +monday(model.now)) wRun = 0;   // the running week can still fill up
     }
   }
   const level = levelOf(xp);
@@ -145,7 +157,7 @@ function computeGame(model) {
     shields: sh.shields, shielded: sh.shielded,
     unlocked, has: new Set(unlocked.map((u) => u.id)),
     nextUnlock: UNLOCKS.find((u) => u.lv > level && ['avatar', 'theme', 'scene'].includes(u.type)) || null,
-    quests, chest: quests.every((q) => q.done),
+    quests, chest: quests.filter((q) => q.done).length >= CHEST_NEED,
     monthly: months[months.length - 1], months,
     achievements: ACHIEVEMENTS.map((a) => {
       const cur = a.fn(s);

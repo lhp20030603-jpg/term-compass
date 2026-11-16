@@ -465,6 +465,18 @@ class CardsModule extends SubModule {
     return { due: st.due, fresh: Math.min(st.fresh, Math.max(0, s.settings.newPerDay - seen)) };
   }
 
+  // For the dashboard's depth chart: how far the cards of each note have been taken.
+  async depthByNote() {
+    const out = {};
+    for (const c of await this.cards()) {
+      const o = out[c.path] || (out[c.path] = { total: 0, started: 0, mature: 0 });
+      const st = this.data.states[c.id];
+      o.total++;
+      if (st) { o.started++; if ((st.interval || 0) >= 21) o.mature++; }
+    }
+    return out;
+  }
+
   async relatedFor(card) {
     if (card.back) return null;
     const f = this.app.vault.getAbstractFileByPath(card.path);

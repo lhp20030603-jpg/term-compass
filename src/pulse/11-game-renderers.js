@@ -58,13 +58,13 @@ function renderPlayer(parent, model, view) {
     ['🏅', `${tiers}/${g.achievements.length * 3}`, '成就']].forEach(([ic, v, l]) => {
     const c = h('div', 'sp-pchip', chipsEl); h('div', 'sp-pchip-v', c, `${ic} ${v}`); h('div', 'sp-muted', c, l);
   });
-  chipsEl.querySelector('.sp-pchip:nth-child(2)').title = `每个满罗盘日得 1 块护盾（最多 ${MAX_SHIELDS}），哪天没学会自动用掉一块，连胜不断。${g.shielded.length ? `已经替你挡过 ${g.shielded.length} 次。` : ''}`;
+  chipsEl.querySelector('.sp-pchip:nth-child(2)').title = `一周里听、读、练、收四个方向都亮过，得 1 块护盾（最多 ${MAX_SHIELDS}），哪天没学会自动用掉一块，连胜不断。${g.shielded.length ? `已经替你挡过 ${g.shielded.length} 次。` : ''}`;
 }
 
 function renderQuests(parent, model, view) {
   const g = model.game;
   const done = g.quests.filter((q) => q.done).length;
-  const body = card(parent, '⚑', '今日任务', `每完成一项 +${QUEST_XP} XP，四项全清开宝箱 +${CHEST_XP} XP`, `${done} / ${g.quests.length}`);
+  const body = card(parent, '⚑', '今日任务', `每完成一项 +${QUEST_XP} XP，做到 ${CHEST_NEED} 项开宝箱 +${CHEST_XP} XP`, `${done} / ${g.quests.length}`);
   for (const q of g.quests) {
     const row = h('div', 'sp-quest' + (q.done ? ' is-done' : ''), body);
     h('div', 'sp-quest-icon', row, q.done ? '✓' : q.icon);
@@ -79,7 +79,7 @@ function renderQuests(parent, model, view) {
   }
   const chest = h('div', 'sp-chest' + (g.chest ? ' is-open' : ''), body);
   sprite(chest, CHEST[g.chest ? 1 : 0], { k: '#5a3a22', y: '#e3a43a', g: '#ffd75e', b: '#a8693a' }, 'sp-chest-svg');
-  h('div', 'sp-grow', chest, g.chest ? `宝箱已打开 +${CHEST_XP} XP · 今天罗盘全满，护盾 +1` : `还差 ${g.quests.length - done} 项开宝箱`);
+  h('div', 'sp-grow', chest, g.chest ? `宝箱已打开 +${CHEST_XP} XP` : `还差 ${CHEST_NEED - done} 项开宝箱`);
 }
 
 function renderMonthly(parent, model) {
@@ -195,7 +195,7 @@ function renderDashboard(root, model, view) {
   const bar = h('div', 'sp-hero-bar', hero);
   const nav = h('div', 'sp-chips is-glass', bar);
   const anchors = {};
-  [['week', '本周'], ['courses', '课程'], ['quests', '今日任务'], ['today', '专注'], ['overview', '总览'], ['moons', '罗盘'], ['ach', '成就']].forEach(([id, label]) => {
+  [['week', '本周'], ['courses', '课程'], ['quests', '今日任务'], ['today', '专注'], ['overview', '潮汐'], ['moons', '罗盘'], ['depth', '测深'], ['ach', '成就']].forEach(([id, label]) => {
     const b = h('button', 'sp-chip', nav, label); b.onclick = () => anchors[id] && anchors[id].scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
   const right = h('div', 'sp-chips is-glass', bar);
@@ -225,16 +225,15 @@ function renderDashboard(root, model, view) {
   renderPomodoro(root, model, view);
   renderHeatmap(root, model, view);
   anchors.overview = h('div', 'sp-anchor', root);
-  const ranges = h('div', 'sp-range', root);
-  chips(ranges, [[7, '近 7 天'], [30, '近 30 天'], [90, '近 90 天'], ['year', '今年'], [365, '近一年']], view.range, (r) => view.set({ range: r }));
-  renderOverview(root, model, view);
+  renderTide(root, model, view);
   renderDay(root, model, view);
   anchors.moons = h('div', 'sp-anchor', root);
-  renderMoons(root, model, view);
+  renderRose(root, model, view);
+  anchors.depth = h('div', 'sp-anchor', root);
+  renderDepth(root, model, view);
   anchors.ach = h('div', 'sp-anchor', root);
   renderAchievements(root, model);
-  anchors.strata = h('div', 'sp-anchor', root);
-  renderStrata(root, model);
+
 
   const foot = h('div', 'sp-footer', root);
   renderScene(foot, model.now, true, null, deco);
@@ -248,7 +247,7 @@ function renderDashboard(root, model, view) {
 const SECTIONS = {
   dashboard: renderDashboard,
   scene: (el, m) => renderScene(el, m.now, false, null, sceneDeco(m)),
-  overview: renderOverview, heatmap: renderHeatmap, today: renderDay, pomodoro: renderPomodoro,
+  overview: renderTide, tide: renderTide, heatmap: renderHeatmap, today: renderDay, pomodoro: renderPomodoro,
   player: renderPlayer, quests: renderQuests, monthly: renderMonthly, achievements: renderAchievements,
-  voyage: renderVoyage, courses: renderCourses, deadlines: renderDeadlines, week: renderWeek, moons: renderMoons, english: renderMoons, strata: renderStrata, now: renderNow,
+  voyage: renderVoyage, courses: renderCourses, deadlines: renderDeadlines, week: renderWeek, moons: renderRose, rose: renderRose, strata: renderDepth, depth: renderDepth, now: renderNow,
 };

@@ -257,14 +257,24 @@ class PulseModule extends SubModule {
   }
 
   // Time in a course note or PDF, while the window is in use and no pomodoro or recording already covers it.
+  // One mark per minute in the hour-of-day record, whatever kind of study it was.
+  markHour() {
+    const minute = new Date().toISOString().slice(0, 16);
+    if (minute === this.lastHourMinute) return;
+    this.lastHourMinute = minute;
+    this.today().hours[new Date().getHours()]++;
+  }
+
   readingTick() {
-    if (!document.hasFocus() || Date.now() - this.lastInput > READING_IDLE_MS) return;
     const voice = this.peer('voice');
-    if ((this.data.pomo || {}).mode === 'focus' || (voice && voice.rec)) return;
+    const busy = (this.data.pomo || {}).mode === 'focus' || (voice && voice.rec);
+    if (busy) { this.markHour(); this.persistSoon(); return; }
+    if (!document.hasFocus() || Date.now() - this.lastInput > READING_IDLE_MS) return;
     const view = this.app.workspace.getActiveViewOfType(obsidian.FileView || obsidian.MarkdownView);
     const path = view && view.file && view.file.path;
     if (!path || !path.startsWith(this.settings.courseRoot + '/') || !isReading(path)) return;
     this.today().readSec += READING_TICK_S;
+    this.markHour();
     this.data.reading[path] = (this.data.reading[path] || 0) + READING_TICK_S;
     this.persistSoon();
   }
@@ -339,7 +349,7 @@ class PulseModule extends SubModule {
     if (!this.lastEdit[f.path] || now - this.lastEdit[f.path] > EDIT_SESSION_GAP_MS) d.edits++;
     this.lastEdit[f.path] = now;
     const minute = new Date().toISOString().slice(0, 16);
-    if (minute !== this.lastMinute) { this.lastMinute = minute; d.activeMin++; d.hours[new Date().getHours()]++; }
+    if (minute !== this.lastMinute) { this.lastMinute = minute; d.activeMin++; this.markHour(); }
     this.persistSoon();
     this.scheduleRefresh();
   }
@@ -452,6 +462,7 @@ class PulseModule extends SubModule {
     this._weekNotes = model.courses.flatMap((c) => c.items.filter((x) => x.inWeek).flatMap((x) => x.links)).map((l) => l.split('/').pop());
     const recall = this.peer('cards'), tempo = this.peer('tasks');
     model.routine = { cards: recall && recall.summary ? await recall.summary() : null, tasks: tempo && tempo.todayCount ? await tempo.todayCount() : 0 };
+    model.cardDepth = recall && recall.depthByNote ? await recall.depthByNote() : {};
     this._model = withGame(model);
     this._modelAt = Date.now();
     // The task panel shows this week's milestones from here; redraw it only when they change,

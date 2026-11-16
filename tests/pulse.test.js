@@ -133,7 +133,7 @@ test('a day after tracking began is never estimated from file dates', () => {
   const touched = { path: '课程/ECON101/x.md', ctime: new Date(2026, 9, 1).getTime(), mtime: now.getTime() };
   const m = buildModel({ files: [touched], cache: { [touched.path]: { w: 500 } }, tracked: { '2026-10-25': Object.assign(P.emptyDay(), { edits: 1 }) }, now });
   assert.equal(m.days['2026-11-05'], undefined);
-  assert.equal(m.game.quests.find((q) => q.key === 'course').done, false);
+  assert.equal(m.game.quests.find((q) => q.key === 'practice').done, false);
 });
 
 test('days before tracking began are still estimated', () => {

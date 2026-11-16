@@ -78,13 +78,15 @@ test('new XP pays for time and recall, not saving or pasting', () => {
   assert.equal(m.days['2026-11-12'].score, 50 + 30 + 10 + 10 + 10 + 4);
 });
 
-test('听课 and 读导读 count towards the 专注 habit', () => {
-  const tracked = { '2026-11-12': day({ focus: 10, readSec: 600 }) };
-  const focus = (m) => m.game.quests.find((q) => q.key === 'focus');
-  assert.equal(focus(build({ tracked })).done, false);
-  const m = build({ tracked, recordings: [{ date: '2026-11-12', minutes: 30, course: 'ECON101' }] });
-  assert.equal(focus(m).done, true);
-  assert.match(focus(m).prog.text, /50 \/ 50/);
+test('听 lights on a recorded lecture, 读 on twenty minutes in the notes', () => {
+  const quest = (m, key) => m.game.quests.find((q) => q.key === key);
+  const tracked = { '2026-11-12': day({ readSec: 600 }) };
+  assert.equal(quest(build({ tracked }), 'listen').done, false);
+  assert.equal(quest(build({ tracked }), 'read').done, false);
+  const m = build({ tracked: { '2026-11-12': day({ readSec: 1200 }) }, recordings: [{ date: '2026-11-12', minutes: 30, course: 'ECON101' }] });
+  assert.equal(quest(m, 'listen').done, true);
+  assert.equal(quest(m, 'read').done, true);
+  assert.match(quest(m, 'read').prog.text, /20 \/ 20/);
 });
 
 test('a recording outside the courses is not a lecture', () => {
@@ -97,9 +99,11 @@ test('a lecture day appears even with nothing else tracked', () => {
   assert.equal(m.days['2026-11-10'].lecture, 90);
 });
 
-test('the 课程 habit counts only your own typing', () => {
-  const tracked = { '2026-11-12': day({ areas: { ECON101: 5000 }, fileStats: { a: { t: 20, p: 20000, area: 'ECON101' } } }) };
-  assert.equal(build({ tracked }).game.quests.find((q) => q.key === 'course').done, false);
+test('练 counts only your own typing, never pasted words', () => {
+  const quest = (tracked) => build({ tracked }).game.quests.find((q) => q.key === 'practice');
+  assert.equal(quest({ '2026-11-12': day({ areas: { ECON101: 5000 }, fileStats: { a: { t: 20, p: 20000, area: 'ECON101' } } }) }).done, false);
+  assert.equal(quest({ '2026-11-12': day({ fileStats: { a: { t: 120, p: 0, area: 'ECON101' } } }) }).done, true);
+  assert.equal(quest({ '2026-11-12': day({ focus: 25 }) }).done, true);
 });
 
 const words = (n) => Array.from({ length: n }, (_, i) => `w${i}`).join(' ');

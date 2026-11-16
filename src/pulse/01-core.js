@@ -26,7 +26,7 @@ const DEFAULT_SETTINGS = {
   systemNotify: true,
   backupFolder: '',
   backupKeep: 30,
-  folded: ['学习概览', '当日详情', '知识地层', '成就'],
+  folded: ['当日详情', '成就'],
 };
 
 // XP: time spent and things recalled. Saving, new notes, pastes and tool-written
@@ -41,21 +41,28 @@ const TYPED_WINDOW_MS = 8000;      // autosave lands about 2 s after the last ke
 // single save cannot be typing, even with keys pressed just before it.
 const PASTE_WORDS = 80;
 
-// The compass measures balance, not volume: each habit done lights one direction.
+// The four directions follow how studying actually happens: listen, read, practise, wrap up.
+// Balance is judged over a week (see roseWeek), because most days are spent on one of them.
 // progress(d) → { frac 0..1, text } drives the quest bars; done = frac >= 1.
 const typedIn = (day, code) => Object.values(day.fileStats || {}).reduce((a, x) => a + (x.area === code ? x.t : 0), 0);
 const courseWords = (d, codes) => Math.round(codes.reduce((a, c) => a + (d.est ? d.areas[c] || 0 : typedIn(d, c)), 0));
 const studyMin = (d) => (d.focus || 0) + (d.lecture || 0) + (d.readMin || 0);
+const LISTEN_MIN = 20, READ_GOAL_MIN = 20, PRACTICE = { cards: 10, words: 100, focus: 25 };
 const HABITS = [
-  { key: 'course', label: '课程', icon: '📖', hint: '在课程笔记里手写 ≥ 100 词',
-    progress: (d, codes) => ({ frac: courseWords(d, codes) / 100, text: `${courseWords(d, codes)} / 100 词` }) },
-  { key: 'english', label: '英语', icon: '🗣', hint: '读完一篇每日阅读，或英语区写 ≥ 100 词',
-    progress: (d) => ({ frac: Math.max(d.reading ? 1 : 0, (d.areas['英语'] || 0) / 100), text: d.reading ? `精读 ${d.reading} 篇` : `${Math.round(d.areas['英语'] || 0)} / 100 词，或读 1 篇` }) },
-  { key: 'focus', label: '专注', icon: '🍅', hint: '番茄、听课、阅读课程笔记合计 ≥ 50 分钟',
-    progress: (d) => ({ frac: studyMin(d) / 50, text: `${studyMin(d)} / 50 分钟` }) },
-  { key: 'close', label: '收尾', icon: '✅', hint: '勾掉 1 个任务，或复习 10 张闪卡',
-    progress: (d) => ({ frac: Math.max(d.tasks || 0, (d.reviews || 0) / 10), text: `任务 ${d.tasks || 0}/1 · 闪卡 ${d.reviews || 0}/10` }) },
+  { key: 'listen', label: '听', icon: '🎧', dir: '北', hint: `当天有课，或录了 ${LISTEN_MIN} 分钟以上的课`,
+    progress: (d) => (d.hadLecture && !d.lecture ? { frac: 1, text: '今天有课' } : { frac: (d.lecture || 0) / LISTEN_MIN, text: `${d.lecture || 0} / ${LISTEN_MIN} 分钟` }) },
+  { key: 'read', label: '读', icon: '📖', dir: '东', hint: `读课程笔记或课件满 ${READ_GOAL_MIN} 分钟`,
+    progress: (d) => ({ frac: (d.readMin || 0) / READ_GOAL_MIN, text: `${d.readMin || 0} / ${READ_GOAL_MIN} 分钟` }) },
+  { key: 'practice', label: '练', icon: '✍️', dir: '南', hint: `复习 ${PRACTICE.cards} 张闪卡，或在课程笔记里手写 ${PRACTICE.words} 词，或专注 ${PRACTICE.focus} 分钟`,
+    progress: (d, codes) => {
+      const w = courseWords(d, codes);
+      return { frac: Math.max((d.reviews || 0) / PRACTICE.cards, w / PRACTICE.words, (d.focus || 0) / PRACTICE.focus),
+        text: `闪卡 ${d.reviews || 0}/${PRACTICE.cards} · 手写 ${w}/${PRACTICE.words} · 专注 ${d.focus || 0}/${PRACTICE.focus}` };
+    } },
+  { key: 'close', label: '收', icon: '✅', dir: '西', hint: '勾掉 1 个任务',
+    progress: (d) => ({ frac: d.tasks || 0, text: `任务 ${d.tasks || 0}/1` }) },
 ];
+const CHEST_NEED = 3;   // directions in one day that open the chest
 HABITS.forEach((hb) => { hb.test = (d, codes) => hb.progress(d, codes).frac >= 1; });
 
 const EDIT_SESSION_GAP_MS = 10 * 60 * 1000;
